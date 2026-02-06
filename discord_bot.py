@@ -22,7 +22,11 @@ class DiscordFFBot(commands.Bot):
         super().__init__(command_prefix=config['discord']['prefix'], intents=intents)
         
         self.config = config
-        self.command_channel_id = int(config['discord']['command_channel_id'])
+        try:
+            self.command_channel_id = int(config['discord']['command_channel_id'])
+        except (ValueError, TypeError, KeyError):
+            print("❌ Error: Invalid or missing Discord Channel ID!")
+            self.command_channel_id = 0
         
     async def setup_hook(self):
         """Called when bot is starting up"""
