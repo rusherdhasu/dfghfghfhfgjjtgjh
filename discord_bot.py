@@ -34,8 +34,8 @@ class DiscordFFBot(commands.Bot):
         
     async def on_ready(self):
         """Called when bot successfully connects to Discord"""
-        print(f'✅ Discord Bot logged in as {self.user.name} (ID: {self.user.id})')
-        print(f'📢 Listening for commands in channel ID: {self.command_channel_id}')
+        print(f'✅ DISCORD SUCCESS: Logged in as {self.user.name} (ID: {self.user.id})')
+        print(f'📢 Channel: {self.command_channel_id} | Prefix: {self.command_prefix}')
         print('━' * 50)
         
         # Set bot status
@@ -245,12 +245,17 @@ async def run_discord_bot(config):
     
     # Start bot
     try:
-        await bot.start(config['discord']['bot_token'])
+        print(f"📡 Attempting Discord Login... (Token length: {len(config['discord']['bot_token'])})")
+        await bot.start(config['discord']['bot_token'].strip())
     except discord.LoginFailure:
-        print("❌ Error: Invalid Discord bot token!")
-        print("Please check your config.json and ensure the bot token is correct")
+        print("❌ ERROR: Discord Token invalid or improperly formatted!")
+        print("   → Please check your Developer Portal for a fresh token.")
+    except discord.PrivilegedIntentsRequired:
+        print("❌ ERROR: Privileged Intents (Message Content) NOT ENABLED!")
+        print("   → Go to Discord Developer Portal > Bot > Privileged Gateway Intents")
+        print("   → Enable 'MESSAGE CONTENT INTENT'")
     except Exception as e:
-        print(f"❌ Discord Bot Error: {e}")
+        print(f"❌ Discord Connection Error: {e}")
 
 async def get_command():
     """Get next command from queue (called by main bot)"""
