@@ -243,19 +243,39 @@ async def run_discord_bot(config):
     bot.add_command(bot_status)
     bot.add_command(help_command)
     
-    # Start bot
-    try:
-        print(f"📡 Attempting Discord Login... (Token length: {len(config['discord']['bot_token'])})")
-        await bot.start(config['discord']['bot_token'].strip())
-    except discord.LoginFailure:
-        print("❌ ERROR: Discord Token invalid or improperly formatted!")
-        print("   → Please check your Developer Portal for a fresh token.")
-    except discord.PrivilegedIntentsRequired:
-        print("❌ ERROR: Privileged Intents (Message Content) NOT ENABLED!")
-        print("   → Go to Discord Developer Portal > Bot > Privileged Gateway Intents")
-        print("   → Enable 'MESSAGE CONTENT INTENT'")
-    except Exception as e:
-        print(f"❌ Discord Connection Error: {e}")
+    # Start bot with retry loop for 429 errors
+    max_retries = 10
+    retry_delay = 60 # wait 1 minute on rate limit
+    
+    for attempt in range(max_retries):
+        try:
+            print(f"📡 Attempting Discord Login... (Attempt {attempt + 1})")
+            await bot.start(config['discord']['bot_token'].strip())
+            break # Success!
+        except discord.errors.HTTPException as e:
+            if e.status == 429:
+                print(f"⚠️ DISCORD RATE LIMIT (429) DETECTED!")
+                print(f"   Render's IP is currently blocked by Discord/Cloudflare.")
+                print(f"   Waiting {retry_delay} seconds before retrying...")
+                await asyncio.sleep(retry_delay)
+            else:
+                print(f"❌ Discord HTTP Error: {e}")
+                break
+        except discord.LoginFailure:
+            print("❌ ERROR: Discord Token invalid or improperly formatted!")
+            print("   → Please check your Developer Portal for a fresh token.")
+            break
+        except discord.PrivilegedIntentsRequired:
+            print("❌ ERROR: Privileged Intents (Message Content) NOT ENABLED!")
+            print("   → Go to Discord Developer Portal > Bot > Privileged Gateway Intents")
+            print("   → Enable 'MESSAGE CONTENT INTENT'")
+            break
+        except Exception as e:
+            print(f"❌ Discord Connection Error: {e}")
+            if attempt < max_retries - 1:
+                await asyncio.sleep(10)
+            else:
+                break
 
 async def get_command():
     """Get next command from queue (called by main bot)"""
