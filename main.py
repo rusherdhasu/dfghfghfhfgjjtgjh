@@ -4505,11 +4505,13 @@ async def account_watcher():
                         bot = FreeFireBot(uid, pwd)
                         active_bots[uid] = bot
                         asyncio.create_task(bot.run_account())
+                        # Stagger startup even in watcher to prevent spikes
+                        await asyncio.sleep(5)
                         
         except Exception:
             pass # Silent watcher errors
         
-        await asyncio.sleep(8) # Check every 8 seconds
+        await asyncio.sleep(10) # Check every 10 seconds (slightly slower)
 
 async def StarTinG():
     print(render('DHASU-RUSHER', colors=['white', 'cyan'], align='center'))
