@@ -12,9 +12,15 @@ from datetime import datetime
 from pathlib import Path
 import time
 
-# Environment variables for deployment
-DISCORD_TOKEN = os.getenv('DISCORD_BOT_TOKEN')
-DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL_ID')
+# ================= CONFIGURATION =================
+# AGAR RENDER PE ENV VARS NAHI CHAL RAHE, TOH YAHAN BHI DAL SAKTE HO:
+HARDCODED_TOKEN = "MTQ2OTMzMzI2NDEyNzc1NDU2Ng.G7ckKs.JwoOjuQ0JWkwlPUpFm9hTbN1Wn0bGqYTYUT7f0"          # Paste your Discord Token here
+HARDCODED_CHANNEL_ID = "1452134167302373377"     # Paste your Channel ID here
+# =================================================
+
+# Environment variables for deployment (Prioritized)
+DISCORD_TOKEN = os.getenv('DISCORD_BOT_TOKEN') or HARDCODED_TOKEN
+DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL_ID') or HARDCODED_CHANNEL_ID
 DISCORD_PREFIX = os.getenv('DISCORD_PREFIX', '!')
 ACCOUNTS_ENV = os.getenv('ACCOUNTS', '')
 
@@ -207,11 +213,26 @@ async def main():
     if not config:
         return
     
+    # Validate configuration
+    if config['discord']['bot_token'] == "YOUR_DISCORD_BOT_TOKEN_HERE" or not config['discord']['bot_token']:
+        print("❌ Error: Discord bot token is missing!")
+        return
+    
+    if config['discord']['command_channel_id'] == "YOUR_CHANNEL_ID_HERE" or not config['discord']['command_channel_id']:
+        print("❌ Error: Discord channel ID is missing!")
+        return
+
+    # Create Discord bot task (START THIS FIRST)
+    print("🤖 Starting Discord bot...")
+    discord_task = asyncio.create_task(
+        discord_bot.run_discord_bot(config),
+        name="Discord Bot"
+    )
+    
     # Load accounts
     accounts = load_accounts()
     if not accounts:
-        print("❌ Error: No accounts found in accounts.txt")
-        return
+        print("ℹ️  Note: No accounts found yet. Waiting for accounts.txt or ACCOUNTS env var...")
     
     # Set initial file modified time
     last_modified_time = get_file_modified_time()
@@ -221,31 +242,12 @@ async def main():
     print(f"   Total Accounts: {len(accounts)}")
     print()
     
-    # Validate configuration
-    if config['discord']['bot_token'] == "YOUR_DISCORD_BOT_TOKEN_HERE":
-        print("❌ Error: Please set your Discord bot token in config.json")
-        print("   Edit config.json and add your bot token")
-        return
-    
-    if config['discord']['command_channel_id'] == "YOUR_CHANNEL_ID_HERE":
-        print("❌ Error: Please set your Discord channel ID in config.json")
-        print("   Edit config.json and add your channel ID")
-        return
-    
     # Create bot instances for all accounts
-    print("🚀 Starting bots...\n")
-    
-    ff_tasks = []
-    for idx, (uid, account) in enumerate(accounts.items(), 1):
-        print(f"   [{idx}] Creating bot for UID: {uid}")
-        task = await start_bot(account['uid'], account['password'])
-        ff_tasks.append(task)
-    
-    # Create Discord bot task
-    discord_task = asyncio.create_task(
-        discord_bot.run_discord_bot(config),
-        name="Discord Bot"
-    )
+    if accounts:
+        print("🚀 Starting Free Fire bots...\n")
+        for idx, (uid, account) in enumerate(accounts.items(), 1):
+            print(f"   [{idx}] Creating bot for UID: {uid}")
+            await start_bot(account['uid'], account['password'])
     
     # Create file watcher task
     watcher_task = asyncio.create_task(
