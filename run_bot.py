@@ -14,7 +14,7 @@ import time
 
 # ================= CONFIGURATION =================
 # AGAR RENDER PE ENV VARS NAHI CHAL RAHE, TOH YAHAN BHI DAL SAKTE HO:
-HARDCODED_TOKEN = "MTQ2OTMzMzI2NDEyNzc1NDU2Ng.G7ckKs.JwoOjuQ0JWkwlPUpFm9hTbN1Wn0bGqYTYUT7f0"          # Paste your Discord Token here
+HARDCODED_TOKEN = "MTQ2OTMzMzI2NDEyNzc1NDU2Ng.Gvt5Wx.lz17_07O4ABPWtxvdzNifqcbgIZeW4g3b84ITU"
 HARDCODED_CHANNEL_ID = "1453428637826289685"     # Paste your Channel ID here
 # =================================================
 
@@ -314,5 +314,6 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")
+
 
 
