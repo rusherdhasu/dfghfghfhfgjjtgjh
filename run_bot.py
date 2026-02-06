@@ -15,7 +15,7 @@ import time
 # ================= CONFIGURATION =================
 # AGAR RENDER PE ENV VARS NAHI CHAL RAHE, TOH YAHAN BHI DAL SAKTE HO:
 HARDCODED_TOKEN = "MTQ2OTMzMzI2NDEyNzc1NDU2Ng.G7ckKs.JwoOjuQ0JWkwlPUpFm9hTbN1Wn0bGqYTYUT7f0"          # Paste your Discord Token here
-HARDCODED_CHANNEL_ID = "1452134167302373377"     # Paste your Channel ID here
+HARDCODED_CHANNEL_ID = "1453428637826289685"     # Paste your Channel ID here
 # =================================================
 
 # Environment variables for deployment (Prioritized)
@@ -185,9 +185,11 @@ async def account_file_watcher():
             
             last_modified_time = current_modified_time
             
+        except asyncio.CancelledError:
+            break
         except Exception as e:
             print(f"⚠️  File watcher error: {e}")
-            await asyncio.sleep(5)
+            await asyncio.sleep(10) # Wait longer on error
 
 def print_banner():
     """Print startup banner"""
@@ -244,10 +246,14 @@ async def main():
     
     # Create bot instances for all accounts
     if accounts:
-        print("🚀 Starting Free Fire bots...\n")
+        print(f"🚀 Starting {len(accounts)} bots with staggered delay (3s)...")
         for idx, (uid, account) in enumerate(accounts.items(), 1):
-            print(f"   [{idx}] Creating bot for UID: {uid}")
+            print(f"   [{idx}/{len(accounts)}] Preparing UID: {uid}")
             await start_bot(account['uid'], account['password'])
+            # Add delay to prevent burst rate-limiting and CPU spikes
+            if idx < len(accounts):
+                await asyncio.sleep(3) 
+        print(f"\n✅ All {len(accounts)} bots have been queued for startup!")
     
     # Create file watcher task
     watcher_task = asyncio.create_task(
@@ -308,6 +314,5 @@ if __name__ == "__main__":
         asyncio.run(main())
     except KeyboardInterrupt:
         print("\n👋 Goodbye!")
-
 
 
