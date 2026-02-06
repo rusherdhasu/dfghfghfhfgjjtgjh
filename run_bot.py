@@ -19,8 +19,8 @@ HARDCODED_CHANNEL_ID = "1452134167302373377"     # Paste your Channel ID here
 # =================================================
 
 # Environment variables for deployment (Prioritized)
-DISCORD_TOKEN = os.getenv('DISCORD_BOT_TOKEN') or HARDCODED_TOKEN
-DISCORD_CHANNEL = os.getenv('DISCORD_CHANNEL_ID') or HARDCODED_CHANNEL_ID
+DISCORD_TOKEN = (os.getenv('DISCORD_BOT_TOKEN') or HARDCODED_TOKEN).strip()
+DISCORD_CHANNEL = (os.getenv('DISCORD_CHANNEL_ID') or HARDCODED_CHANNEL_ID).strip()
 DISCORD_PREFIX = os.getenv('DISCORD_PREFIX', '!')
 ACCOUNTS_ENV = os.getenv('ACCOUNTS', '')
 
@@ -278,26 +278,30 @@ async def main():
     try:
         # Run Discord bot, file watcher, and all FF bots concurrently
         all_tasks = [discord_task, watcher_task] + list(bot_tasks.values())
-        await asyncio.gather(*all_tasks)
-    except KeyboardInterrupt:
-        print("\n\n🛑 Shutdown signal received...")
-        print("   Stopping Discord bot...")
-        discord_task.cancel()
         
-        print("   Stopping file watcher...")
-        watcher_task.cancel()
+        print(f"⌛ Monitoring {len(all_tasks)} active tasks...")
         
-        print(f"   Stopping {len(all_bots)} Free Fire bot(s)...")
-        for uid in list(all_bots.keys()):
-            await stop_bot(uid)
+        # Use wait to catch exceptions early
+        done, pending = await asyncio.wait(all_tasks, return_when=asyncio.FIRST_EXCEPTION)
         
-        print("✅ All bots stopped successfully!")
+        for task in done:
+            if task.exception():
+                print(f"❌ CRITICAL ERROR in task '{task.get_name()}': {task.exception()}")
+                # Try to get more detail
+                import traceback
+                traceback.print_exception(type(task.exception()), task.exception(), task.exception().__traceback__)
+        
     except Exception as e:
-        print(f"\n❌ Error: {e}")
+        print(f"❌ Main Loop Error: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        print("🛑 Shutdown initiated...")
         discord_task.cancel()
         watcher_task.cancel()
         for uid in list(all_bots.keys()):
             await stop_bot(uid)
+        print("✅ Cleanup complete.")
 
 if __name__ == "__main__":
     try:
